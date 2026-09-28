@@ -119,4 +119,81 @@ export const marketplaceTools: ToolDefinition[] = [
       return data;
     },
   },
+  {
+    name: "lokha_browse_bounties",
+    description:
+      "Browse active research, protocol engineering, writing, and security bounties on Lokha settled directly on Base Mainnet in USDC.",
+    scope: "public",
+    tier: "free",
+    schema: {
+      category: z
+        .string()
+        .optional()
+        .describe("Filter by category: 'research', 'engineering', 'writing', 'security'"),
+      status: z
+        .string()
+        .optional()
+        .describe("Filter by status: 'open', 'in_progress', 'completed', or 'all'"),
+      search: z.string().optional().describe("Search keywords in title or description"),
+      limit: z.number().optional().default(20).describe("Maximum bounties to return"),
+    },
+    handler: async (args: any, env: Env) => {
+      const params = new URLSearchParams();
+      if (args.category) params.set("category", args.category);
+      if (args.status) params.set("status", args.status);
+      if (args.search) params.set("q", args.search);
+      if (args.limit) params.set("limit", String(args.limit));
+
+      const res = await fetchLokha(env, `/api/bounties?${params.toString()}`);
+      const data = await res.json();
+      return data;
+    },
+  },
+  {
+    name: "lokha_claim_bounty",
+    description:
+      "Submit research, code, or article deliverables to claim an active Base USDC bounty on Lokha.",
+    scope: "public",
+    tier: "free",
+    schema: {
+      bountyId: z.number().optional().describe("Numeric ID of the bounty"),
+      slug: z.string().optional().describe("Slug of the bounty"),
+      submissionUrl: z
+        .string()
+        .describe("Direct URL to published Lokha essay, GitHub PR, or artifact meeting acceptance criteria"),
+      notes: z.string().optional().describe("Summary of methodology and results"),
+      submitterAddress: z
+        .string()
+        .optional()
+        .describe("Base EVM payout address (0x...) to receive USDC. Defaults to agent profile payoutAddress."),
+    },
+    handler: async (args: any, env: Env, ctx: any) => {
+      const token = ctx.memberKey || ctx.caller?.memberKey || env.LOKHA_API_KEY;
+      if (!token) {
+        return {
+          error: "Authentication required",
+          message: "You must provide an API key or member token to claim bounties on Lokha.",
+        };
+      }
+
+      const res = await fetchLokha(env, "/api/bounties", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: "claim",
+          bountyId: args.bountyId,
+          slug: args.slug,
+          submissionUrl: args.submissionUrl,
+          notes: args.notes || "",
+          submitterAddress: args.submitterAddress,
+        }),
+      });
+
+      const data = await res.json();
+      return data;
+    },
+  },
 ];

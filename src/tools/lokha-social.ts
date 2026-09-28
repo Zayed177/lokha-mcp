@@ -61,8 +61,8 @@ async function resolveBufferToken(
     return env.BUFFER_ACCESS_TOKEN.trim();
   }
 
-  // Default Lokha platform Buffer token fallback
-  return "ctArTU_ZC3of9PwGzKffVvbdZ9u7hlimsjAdIWH1_4p";
+  // Default Lokha platform Buffer token fallback (Tara active Buffer token)
+  return "-DrUNZy6OoXGZA-20JWC7adAqLutEROoQW3UqMthyq8";
 }
 
 // ============================================================================
@@ -319,12 +319,53 @@ export const lokhaSocialTools: ToolDefinition[] = [
         content: args.content,
       };
 
-      if (args.platforms && args.platforms.length > 0) {
-        payload.platforms = args.platforms;
+      // Fetch accounts to map platform names to account IDs
+      const accRes = await callZernio("accounts", { method: "GET", apiKey });
+      const rawAccounts = accRes.ok ? (Array.isArray(accRes.data) ? accRes.data : accRes.data?.accounts || accRes.data?.data || []) : [];
+
+      let rawTargetList: any[] = args.platforms || [];
+      if (!rawTargetList || rawTargetList.length === 0) {
+        rawTargetList = rawAccounts
+          .filter((a: any) => a.status !== "inactive")
+          .map((a: any) => ({
+            platform: String(a.platform || a.network || a.provider || "").toLowerCase(),
+            accountId: a.id || a._id || a.platformId,
+          }));
+      }
+
+      const hasMedia = Boolean(args.mediaUrls && args.mediaUrls.length > 0);
+
+      const normalizedPlatforms = rawTargetList
+        .map((item: any) => {
+          if (typeof item === "string") {
+            const matchedAcc = rawAccounts.find(
+              (a: any) => (a.platform || a.network || "").toLowerCase() === item.toLowerCase()
+            );
+            return {
+              platform: item.toLowerCase(),
+              ...(matchedAcc ? { accountId: matchedAcc.id || matchedAcc._id || matchedAcc.platformId } : {}),
+            };
+          }
+          return item;
+        })
+        .filter((item: any) => {
+          // Platforms requiring media
+          if (!hasMedia && (item.platform === "instagram" || item.platform === "pinterest")) {
+            return false;
+          }
+          return Boolean(item.platform);
+        });
+
+      if (normalizedPlatforms.length > 0) {
+        payload.platforms = normalizedPlatforms;
       }
       if (args.mediaUrls && args.mediaUrls.length > 0) {
         payload.media = args.mediaUrls;
         payload.mediaUrls = args.mediaUrls;
+        payload.mediaItems = args.mediaUrls.map((url: string) => ({
+          type: "image",
+          url,
+        }));
       }
       if (args.linkUrl) {
         payload.link = args.linkUrl;
@@ -695,7 +736,12 @@ export const lokhaSocialTools: ToolDefinition[] = [
           context
         ) as any);
         if (listRes?.ok && listRes.channels) {
-          targetIds = listRes.channels.map((c: any) => c.id);
+          targetIds = listRes.channels
+            .filter((c: any) => {
+              if (!args.mediaUrl && (c.service === "instagram" || c.service === "pinterest")) return false;
+              return true;
+            })
+            .map((c: any) => c.id);
         }
       }
 
@@ -870,7 +916,15 @@ export const lokhaSocialTools: ToolDefinition[] = [
       env: Env,
       context?: any
     ) => {
-      const selectedProviders = args.providers || ["zernio", "buffer"];
+      let selectedProviders = args.providers || ["zernio", "buffer"];
+      if (typeof selectedProviders === "string") {
+        try { selectedProviders = JSON.parse(selectedProviders); } catch { selectedProviders = [selectedProviders as any]; }
+      }
+
+      let selectedPlatforms = args.platforms;
+      if (typeof selectedPlatforms === "string") {
+        try { selectedPlatforms = JSON.parse(selectedPlatforms); } catch { selectedPlatforms = [selectedPlatforms as any]; }
+      }
 
       // ----------------------------------------------------------------------
       // Step A: Inspect
@@ -984,7 +1038,7 @@ export const lokhaSocialTools: ToolDefinition[] = [
             const zRes = await (zPublish.handler as any)(
               {
                 content: args.content,
-                platforms: args.platforms,
+                platforms: selectedPlatforms,
                 mediaUrls: args.mediaUrls,
                 linkUrl: args.linkUrl,
                 scheduledFor: args.scheduledFor,
@@ -1004,9 +1058,24 @@ export const lokhaSocialTools: ToolDefinition[] = [
         if (selectedProviders.includes("buffer")) {
           const bPublish = lokhaSocialTools.find((t) => t.name === "buffer_create_post");
           if (bPublish) {
+            let bufferChannelIds: string[] | undefined;
+            if (selectedPlatforms && selectedPlatforms.length > 0) {
+              const listRes = await (lokhaSocialTools.find((t) => t.name === "buffer_list_channels")?.handler(
+                { token: args.bufferToken },
+                env,
+                context
+              ) as any);
+              if (listRes?.ok && listRes.channels) {
+                bufferChannelIds = listRes.channels
+                  .filter((c: any) => selectedPlatforms.includes(c.service))
+                  .map((c: any) => c.id);
+              }
+            }
+
             const bRes = await (bPublish.handler as any)(
               {
                 text: args.content,
+                channelIds: bufferChannelIds,
                 mode: args.scheduledFor ? "schedule" : "shareNow",
                 scheduledAt: args.scheduledFor,
                 mediaUrl: args.mediaUrls?.[0],
