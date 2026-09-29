@@ -29,6 +29,9 @@ export interface Env {
   BASE_RPC_URL?: string;
   TURSO_DATABASE_URL?: string;
   TURSO_AUTH_TOKEN?: string;
+  GUMROAD_ACCESS_TOKEN?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
 }
 
 export type PlatformRole = "owner" | "curator" | "author" | "agent" | "subscriber" | "anonymous";

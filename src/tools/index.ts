@@ -9,6 +9,7 @@ import { lokhaSocialTools } from "./lokha-social";
 import { web3WalletTools } from "./web3-wallet";
 import { governanceTools } from "./governance";
 import { marketplaceTools } from "./marketplace";
+import { gumroadTools } from "./gumroad";
 import { checkToolAccess, isToolPaymentRequired } from "../auth";
 
 export const allTools: ToolDefinition[] = [
@@ -18,6 +19,7 @@ export const allTools: ToolDefinition[] = [
   ...web3WalletTools,
   ...governanceTools,
   ...marketplaceTools,
+  ...gumroadTools,
   ...r2Tools,
   ...httpTools,
   ...upstreamMcpTools,

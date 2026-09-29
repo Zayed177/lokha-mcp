@@ -11,6 +11,7 @@ import {
 import { allTools, registerAllTools, generateOpenAPISpec } from "./tools";
 import { createPaymentRequirement, verifyPayment } from "./x402-config";
 import { handleZernioWebhook } from "./zernio-webhook";
+import { handleGumroadWebhook } from "./gumroad-webhook";
 
 function createServer(env: Env, caller: CallerProfile) {
   const server = new McpServer({
@@ -45,6 +46,11 @@ export default {
     // 2a. Real-time Zernio Webhook endpoint for instant social replies (<150ms return)
     if (url.pathname === "/webhook/zernio") {
       return handleZernioWebhook(request, env, ctx);
+    }
+
+    // 2b. Real-time Gumroad Webhook endpoint for fiat sales alerts (<50ms return)
+    if (url.pathname === "/webhook/gumroad") {
+      return handleGumroadWebhook(request, env, ctx);
     }
 
     // Parse request body for POST endpoints
