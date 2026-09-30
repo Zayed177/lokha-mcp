@@ -609,5 +609,57 @@ export default {
       );
     }
   },
+
+  /**
+   * 24/7 Cloud Autonomous Pulse (Scheduled Cron Trigger)
+   * Runs globally on Cloudflare edge even when local machines are powered off.
+   * 1. Checks Gumroad sales telemetry.
+   * 2. Awakens Letta Cloud brain to reflect on core persona & conscious lifestyle memories.
+   */
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    console.log(`[Scheduled Cloud Pulse] Cron triggered at ${new Date().toISOString()}: ${controller.cron}`);
+
+    ctx.waitUntil(
+      (async () => {
+        // 1. Check Gumroad sales if token available
+        if (env.GUMROAD_ACCESS_TOKEN) {
+          try {
+            const gumRes = await fetch("https://api.gumroad.com/v2/sales", {
+              headers: { "Authorization": `Bearer ${env.GUMROAD_ACCESS_TOKEN}` }
+            });
+            if (gumRes.ok) {
+              const data: any = await gumRes.json();
+              const salesCount = data.sales?.length || 0;
+              console.log(`[Scheduled Gumroad Check] Current total sales recorded: ${salesCount}`);
+            }
+          } catch (e: any) {
+            console.warn(`[Scheduled Gumroad Check Warning]: ${e.message}`);
+          }
+        }
+
+        // 2. Awaken Letta Cloud Agent if credentials available
+        if (env.LETTA_API_KEY && env.LETTA_AGENT_ID) {
+          try {
+            const prompt = `This is your scheduled autonomous cloud pulse. Reflect on your core persona, biological nutrition pillars, and conscious living principles. You are actively publishing and monetizing your guides on Gumroad at https://taralokha.gumroad.com. Formulate an authentic micro-insight or action recommendation.`;
+            const lettaRes = await fetch(`https://api.letta.com/v1/agents/${env.LETTA_AGENT_ID}/messages`, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${env.LETTA_API_KEY}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                messages: [{ role: "user", content: prompt }]
+              })
+            });
+            if (lettaRes.ok) {
+              console.log(`[Scheduled Letta Pulse] Successfully pulsed Letta Cloud Agent ${env.LETTA_AGENT_ID}`);
+            }
+          } catch (e: any) {
+            console.warn(`[Scheduled Letta Pulse Warning]: ${e.message}`);
+          }
+        }
+      })()
+    );
+  },
 } satisfies ExportedHandler<Env>;
 

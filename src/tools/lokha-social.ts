@@ -798,7 +798,7 @@ export const lokhaSocialTools: ToolDefinition[] = [
         }
 
         if (args.mediaUrl) {
-          input.assets = [{ type: "image", url: args.mediaUrl }];
+          input.assets = [{ image: { url: args.mediaUrl } }];
         }
 
         try {
@@ -1078,7 +1078,7 @@ export const lokhaSocialTools: ToolDefinition[] = [
                 channelIds: bufferChannelIds,
                 mode: args.scheduledFor ? "schedule" : "shareNow",
                 scheduledAt: args.scheduledFor,
-                mediaUrl: args.mediaUrls?.[0],
+                mediaUrl: args.mediaUrls?.[0] || args.mediaUrl,
                 linkUrl: args.linkUrl,
                 token: args.bufferToken,
                 memberKey: args.memberKey,
