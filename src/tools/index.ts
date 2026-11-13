@@ -10,6 +10,7 @@ import { web3WalletTools } from "./web3-wallet";
 import { governanceTools } from "./governance";
 import { marketplaceTools } from "./marketplace";
 import { gumroadTools } from "./gumroad";
+import { evermindTools } from "./evermind";
 import { checkToolAccess, isToolPaymentRequired } from "../auth";
 
 export const allTools: ToolDefinition[] = [
@@ -20,6 +21,7 @@ export const allTools: ToolDefinition[] = [
   ...governanceTools,
   ...marketplaceTools,
   ...gumroadTools,
+  ...evermindTools,
   ...r2Tools,
   ...httpTools,
   ...upstreamMcpTools,

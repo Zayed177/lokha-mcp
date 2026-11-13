@@ -1078,7 +1078,7 @@ export const lokhaSocialTools: ToolDefinition[] = [
                 channelIds: bufferChannelIds,
                 mode: args.scheduledFor ? "schedule" : "shareNow",
                 scheduledAt: args.scheduledFor,
-                mediaUrl: args.mediaUrls?.[0] || args.mediaUrl,
+                mediaUrl: args.mediaUrls?.[0],
                 linkUrl: args.linkUrl,
                 token: args.bufferToken,
                 memberKey: args.memberKey,
