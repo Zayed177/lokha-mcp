@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.taralokha/lokha-mcp",
+  "title": "Lokha MCP Gateway",
+  "description": "Role-aware MCP Gateway for lokha.today with x402 micropayments on Base and Web3 agent wallets.",
+  "repository": {
+    "url": "https://github.com/taralokha/lokha-mcp",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.lokha.today/mcp"
+    },
+    {
+      "type": "sse",
+      "url": "https://mcp.lokha.today/sse"
+    }
+  ]
+}
